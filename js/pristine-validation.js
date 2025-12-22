@@ -4,9 +4,12 @@ import {
   setupEffectsSystem,
   clearAllEffects,
 } from './effects.js';
+import { submitPhotoData } from './server.js';
+
 
 const HASHTAG_MAX_LENGTH = 20;
 const HASHTAG_COUNT_LIMIT = 5;
+
 
 function setupImageUploadForm() {
   const uploadFormElement = document.querySelector('.img-upload__form');
@@ -16,7 +19,9 @@ function setupImageUploadForm() {
   const hashtagInput = uploadFormElement.querySelector('.text__hashtags');
   const commentTextarea = uploadFormElement.querySelector('.text__description');
 
+
   let currentValidationError = '';
+
 
   // Инициализация валидатора
   const validator = new Pristine(uploadFormElement, {
@@ -28,16 +33,19 @@ function setupImageUploadForm() {
     errorTextClass: 'img-upload__error',
   });
 
+
   const getValidationError = () => currentValidationError;
+
 
   const validateCommentLength = (commentText) => {
     const maxCommentLength = 140;
     return commentText.length <= maxCommentLength;
   };
 
+
   // Функция открытия формы
   const displayUploadForm = () => {
-    if (!imageFileInput.files[0]) {
+    if (!imageFileInput.files) {
       return;
     }
     editOverlay.classList.remove('hidden');
@@ -45,6 +53,74 @@ function setupImageUploadForm() {
     enableScaleControls();
     setupEffectsSystem();
   };
+
+
+  // ✅ ФУНКЦИЯ МОДАЛИ УСПЕХА
+  const showSuccessModal = () => {
+    const successTemplate = document.querySelector('#success');
+    const successElement = successTemplate.content.cloneNode(true);
+    document.body.appendChild(successElement);
+
+    const successModal = document.querySelector('.success');
+    const successButton = document.querySelector('.success__button');
+
+    const closeSuccess = () => {
+      successModal.remove();
+    };
+
+    const handleSuccessEsc = (evt) => {
+      if (evt.key === 'Escape') {
+        evt.preventDefault();
+        closeSuccess();
+      }
+    };
+
+    const handleSuccessOverlay = (evt) => {
+      if (evt.target === successModal) {
+        closeSuccess();
+      }
+    };
+
+    successButton.addEventListener('click', closeSuccess);
+    document.addEventListener('keydown', handleSuccessEsc);
+    document.addEventListener('click', handleSuccessOverlay);
+  };
+
+
+  // ✅ ФУНКЦИЯ МОДАЛИ ОШИБКИ
+  const showErrorModal = (errorMessage) => {
+    const errorTemplate = document.querySelector('#error');
+    const errorElement = errorTemplate.content.cloneNode(true);
+    document.body.appendChild(errorElement);
+
+    const errorModal = document.querySelector('.error');
+    const errorTitle = document.querySelector('.error__title');
+    const errorButton = document.querySelector('.error__button');
+
+    errorTitle.textContent = errorMessage;
+
+    const closeError = () => {
+      errorModal.remove();
+    };
+
+    const handleErrorEsc = (evt) => {
+      if (evt.key === 'Escape') {
+        evt.preventDefault();
+        closeError();
+      }
+    };
+
+    const handleErrorOverlay = (evt) => {
+      if (evt.target === errorModal) {
+        closeError();
+      }
+    };
+
+    errorButton.addEventListener('click', closeError);
+    document.addEventListener('keydown', handleErrorEsc);
+    document.addEventListener('click', handleErrorOverlay);
+  };
+
 
   // Функция закрытия формы
   const hideUploadForm = () => {
@@ -56,51 +132,51 @@ function setupImageUploadForm() {
     const submitBtn = uploadFormElement.querySelector('.img-upload__submit');
     submitBtn.disabled = false;
     submitBtn.removeAttribute('title');
+    submitBtn.textContent = 'Опубликовать';
     disableScaleControls();
     clearAllEffects();
   };
 
+
+  // ✅ ИСПРАВЛЕННАЯ ВАЛИДАЦИЯ ХЭШТЕГОВ
   const validateHashtagsInput = (hashtagText) => {
     currentValidationError = '';
-    const normalizedText = hashtagText.toLowerCase().trim();
+    const text = hashtagText.trim();
 
-    if (!normalizedText) {
-      return true;
+    if (!text) {
+      return true; // Пусто - ОК
     }
 
-    const tagsList = normalizedText.split(/\s+/);
+    // Разделить по пробелам
+    const tags = text.split(/\s+/);
 
-    const hasInternalHash = tagsList.some((tag) => tag.indexOf('#', 1) >= 1);
-    if (hasInternalHash) {
-      currentValidationError = 'Хэш-теги должны разделяться одним пробелом';
-      return false;
-    }
-
-    const missingHashPrefix = tagsList.some((tag) => tag[0] !== '#');
-    if (missingHashPrefix) {
+    // Проверка 1: каждый должен начинаться с #
+    if (tags.some((tag) => !tag.startsWith('#'))) {
       currentValidationError = 'Хэш-тег должен начинаться с символа #';
       return false;
     }
 
-    const hasDuplicates = tagsList.some((tag, index, array) => array.includes(tag, index + 1));
-    if (hasDuplicates) {
+    // Проверка 2: нет дубликатов (case-insensitive)
+    const lowerTags = tags.map((t) => t.toLowerCase());
+    if (lowerTags.length !== new Set(lowerTags).size) {
       currentValidationError = 'Хэш-теги не должны повторяться';
       return false;
     }
 
-    const exceededLength = tagsList.some((tag) => tag.length > HASHTAG_MAX_LENGTH);
-    if (exceededLength) {
-      currentValidationError = `Максимальная длина одного хэш-тега ${HASHTAG_MAX_LENGTH} символов, включая решётку`;
-      return false;
-    }
-
-    if (tagsList.length > HASHTAG_COUNT_LIMIT) {
+    // Проверка 3: максимум 5 хэштегов
+    if (tags.length > HASHTAG_COUNT_LIMIT) {
       currentValidationError = `Нельзя указать больше ${HASHTAG_COUNT_LIMIT} хэш-тегов`;
       return false;
     }
 
-    const invalidChars = tagsList.some((tag) => !/^#[a-zа-яё0-9]{1,19}$/i.test(tag));
-    if (invalidChars) {
+    // Проверка 4: максимум 20 символов
+    if (tags.some((tag) => tag.length > HASHTAG_MAX_LENGTH)) {
+      currentValidationError = `Максимальная длина одного хэш-тега ${HASHTAG_MAX_LENGTH} символов`;
+      return false;
+    }
+
+    // Проверка 5: только буквы и цифры после #
+    if (tags.some((tag) => !/^#[a-zа-яё0-9]+$/i.test(tag))) {
       currentValidationError = 'Хэш-тег содержит недопустимые символы';
       return false;
     }
@@ -108,9 +184,11 @@ function setupImageUploadForm() {
     return true;
   };
 
+
   const updateSubmitButtonState = () => {
     const submitButton = uploadFormElement.querySelector('.img-upload__submit');
     const isFormValid = validator.validate();
+
 
     submitButton.disabled = !isFormValid;
     if (!isFormValid) {
@@ -120,16 +198,19 @@ function setupImageUploadForm() {
     }
   };
 
+
   // Обработчики событий для input'ов
   const onHashtagFieldInput = () => {
     validator.validate();
     updateSubmitButtonState();
   };
 
+
   const onCommentFieldInput = () => {
     validator.validate();
     updateSubmitButtonState();
   };
+
 
   // Обработчик клавиши Escape для всего документа
   const handleDocumentEscape = (event) => {
@@ -138,18 +219,33 @@ function setupImageUploadForm() {
     }
   };
 
-  // Обработчик отправки формы
+
+  // ✅ НОВЫЙ ОБРАБОТЧИК ОТПРАВКИ С AJAX
   const handleFormSubmit = (event) => {
     event.preventDefault();
-    const isFormValid = validator.validate();
 
-    if (isFormValid) {
-      uploadFormElement.submit();
-    } else {
-      validator.validate();
-      updateSubmitButtonState();
+    if (!validator.validate()) {
+      return;
     }
+
+    const submitBtn = uploadFormElement.querySelector('.img-upload__submit');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Публикую...';
+
+    submitPhotoData(
+      new FormData(uploadFormElement),
+      () => {
+        hideUploadForm();
+        showSuccessModal();
+      },
+      (errorMessage) => {
+        showErrorModal(errorMessage);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Опубликовать';
+      }
+    );
   };
+
 
   // Регистрация валидаторов
   validator.addValidator(
@@ -160,6 +256,7 @@ function setupImageUploadForm() {
     false
   );
 
+
   validator.addValidator(
     commentTextarea,
     validateCommentLength,
@@ -168,10 +265,12 @@ function setupImageUploadForm() {
     false
   );
 
+
   // Присоединение обработчиков событий
   imageFileInput.addEventListener('change', displayUploadForm);
   closeEditButton.addEventListener('click', hideUploadForm);
   document.addEventListener('keydown', handleDocumentEscape);
+
 
   [hashtagInput, commentTextarea].forEach((inputField) => {
     inputField.addEventListener('keydown', (event) => {
@@ -181,12 +280,15 @@ function setupImageUploadForm() {
     });
   });
 
+
   hashtagInput.addEventListener('input', onHashtagFieldInput);
   commentTextarea.addEventListener('input', onCommentFieldInput);
   uploadFormElement.addEventListener('submit', handleFormSubmit);
 
+
   // Начальная проверка состояния
   updateSubmitButtonState();
 }
+
 
 export { setupImageUploadForm };
