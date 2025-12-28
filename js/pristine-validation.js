@@ -18,7 +18,7 @@ function setupImageUploadForm() {
   const closeEditButton = editOverlay.querySelector('#upload-cancel');
   const hashtagInput = uploadFormElement.querySelector('.text__hashtags');
   const commentTextarea = uploadFormElement.querySelector('.text__description');
-
+  const previewImage = uploadFormElement.querySelector('.img-upload__preview img');
 
   let currentValidationError = '';
 
@@ -44,9 +44,23 @@ function setupImageUploadForm() {
 
 
   const displayUploadForm = () => {
-    if (!imageFileInput.files) {
+
+    if (!imageFileInput.files || !imageFileInput.files[0]) {
       return;
     }
+
+    const selectedFile = imageFileInput.files[0];
+
+    const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+
+    if (!validImageTypes.includes(selectedFile.type)) {
+      return;
+    }
+
+    const imageUrl = URL.createObjectURL(selectedFile);
+
+    previewImage.src = imageUrl;
+
     editOverlay.classList.remove('hidden');
     document.body.classList.add('modal-open');
     enableScaleControls();
