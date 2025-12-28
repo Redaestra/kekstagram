@@ -2,6 +2,7 @@ import { fetchPhotosData } from './server.js';
 import { renderPictures } from './picture-rendering.js';
 import './big-picture.js';
 import { setupImageUploadForm } from './pristine-validation.js';
+import { initializeFilters } from './filters.js';
 
 const displayErrorNotification = (message) => {
   const alertBox = document.createElement('div');
@@ -19,7 +20,6 @@ const displayErrorNotification = (message) => {
   `;
   alertBox.textContent = message;
   document.body.appendChild(alertBox);
-
   setTimeout(() => {
     alertBox.remove();
   }, 5000);
@@ -28,6 +28,7 @@ const displayErrorNotification = (message) => {
 fetchPhotosData(
   (photosArray) => {
     renderPictures(photosArray);
+    initializeFilters(photosArray);
   },
   (errorMsg) => {
     displayErrorNotification(errorMsg);
