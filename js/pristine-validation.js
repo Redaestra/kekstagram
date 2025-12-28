@@ -43,7 +43,6 @@ function setupImageUploadForm() {
   };
 
 
-  // Функция открытия формы
   const displayUploadForm = () => {
     if (!imageFileInput.files) {
       return;
@@ -55,7 +54,6 @@ function setupImageUploadForm() {
   };
 
 
-  // ✅ ФУНКЦИЯ МОДАЛИ УСПЕХА
   const showSuccessModal = () => {
     const successTemplate = document.querySelector('#success');
     const successElement = successTemplate.content.cloneNode(true);
@@ -87,7 +85,6 @@ function setupImageUploadForm() {
   };
 
 
-  // ✅ ФУНКЦИЯ МОДАЛИ ОШИБКИ
   const showErrorModal = (errorMessage) => {
     const errorTemplate = document.querySelector('#error');
     const errorElement = errorTemplate.content.cloneNode(true);
@@ -138,13 +135,12 @@ function setupImageUploadForm() {
   };
 
 
-  // ✅ ИСПРАВЛЕННАЯ ВАЛИДАЦИЯ ХЭШТЕГОВ
   const validateHashtagsInput = (hashtagText) => {
     currentValidationError = '';
     const text = hashtagText.trim();
 
     if (!text) {
-      return true; // Пусто - ОК
+      return true;
     }
 
     // Разделить по пробелам
@@ -199,7 +195,6 @@ function setupImageUploadForm() {
   };
 
 
-  // Обработчики событий для input'ов
   const onHashtagFieldInput = () => {
     validator.validate();
     updateSubmitButtonState();
@@ -212,7 +207,6 @@ function setupImageUploadForm() {
   };
 
 
-  // Обработчик клавиши Escape для всего документа
   const handleDocumentEscape = (event) => {
     if (event.key === 'Escape') {
       hideUploadForm();
@@ -220,7 +214,6 @@ function setupImageUploadForm() {
   };
 
 
-  // ✅ НОВЫЙ ОБРАБОТЧИК ОТПРАВКИ С AJAX
   const handleFormSubmit = (event) => {
     event.preventDefault();
 
