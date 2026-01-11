@@ -20,7 +20,6 @@ function setupImageUploadForm() {
   const hashtagInput = uploadFormElement.querySelector('.text__hashtags');
   const commentTextarea = uploadFormElement.querySelector('.text__description');
   const previewImage = uploadFormElement.querySelector('.img-upload__preview img');
-  const previewImage = uploadFormElement.querySelector('.img-upload__preview img');
 
   let currentValidationError = '';
 
