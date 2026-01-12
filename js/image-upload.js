@@ -43,7 +43,7 @@ function setupImageUploadForm() {
     return commentText.length <= maxCommentLength;
   };
 
-  // Функция закрытия формы (объявлена первой, чтобы использоваться в других функциях)
+  // Функция закрытия формы
   const hideUploadForm = () => {
     editOverlay.classList.add('hidden');
     document.body.classList.remove('modal-open');
@@ -94,10 +94,6 @@ function setupImageUploadForm() {
     const successModal = document.querySelector('.success');
     const successButton = document.querySelector('.success__button');
 
-    // Здесь тоже лучше использовать function declaration для консистентности
-    // и правильного удаления слушателей (в вашем коде removeEventListener отсутствовал,
-    // что создавало утечку памяти, я добавил его для исправления).
-
     function closeSuccess() {
       successModal.remove();
       document.removeEventListener('keydown', handleSuccessEsc);
@@ -122,7 +118,6 @@ function setupImageUploadForm() {
     document.addEventListener('click', handleSuccessOverlay);
   };
 
-  // ИСПРАВЛЕННЫЙ БЛОК
   const showErrorModal = (errorMessage) => {
     // Закрыть форму редактирования перед показом ошибки
     hideUploadForm();
@@ -137,10 +132,8 @@ function setupImageUploadForm() {
 
     errorTitle.textContent = errorMessage;
 
-    // Используем function declaration для поднятия (hoisting)
     function closeError() {
       errorModal.remove();
-      // Теперь это работает корректно, так как функции видны во всей области видимости
       document.removeEventListener('keydown', handleErrorEsc);
       document.removeEventListener('click', handleErrorOverlay);
     }
@@ -162,7 +155,6 @@ function setupImageUploadForm() {
     document.addEventListener('keydown', handleErrorEsc);
     document.addEventListener('click', handleErrorOverlay);
   };
-  // КОНЕЦ ИСПРАВЛЕННОГО БЛОКА
 
   const validateHashtagsInput = (hashtagText) => {
     currentValidationError = '';
